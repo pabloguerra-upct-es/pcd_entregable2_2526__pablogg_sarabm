@@ -1,29 +1,14 @@
-class Date:
-    def __init__(self, dia:int, mes:int, año:int):
-        if not isinstance(dia, int):
-            raise TypeError("dia debe ser un numero entero")
-        
-        if not isinstance(mes, int):
-            raise TypeError("mes debe ser un numero entero")
-        
-        if not isinstance(año, int):
-            raise TypeError("año debe ser un numero entero")
-        
-        if ((dia < 1 or dia > 12) or (dia > 29 and mes == 2)):
-            raise ValueError("El dia introducido no es coherente")
-        
-        if mes < 1 or mes > 12:
-            raise ValueError("El mes introducido no es coherente")
-        
-        if año < 0:
-            raise ValueError("El mes introducido no es coherente")
-        
-        self.dia = dia
-        self.mes = mes
-        self.año = año
+from abc import ABCMeta, abstractmethod
+from functools import reduce
+from datetime import date
 
-class Cancion:
-    def __init__(self, id:str, c_sonoras:dict, c_sentimentales:dict, titulo:str, fecha_creacion: Date):
+class ElementoCatalogo(metaclass = ABCMeta):
+    @abstractmethod
+    def obtenerCaracteristicas(self):
+        pass
+
+class Cancion(ElementoCatalogo):
+    def __init__(self, id:str, c_sonoras:dict, c_sentimentales:dict, titulo:str, fecha_creacion: date):
         if not isinstance(id, str):
             raise TypeError("id tiene que ser un numero entero")
         
@@ -36,14 +21,68 @@ class Cancion:
         if not isinstance(titulo, str):
             raise TypeError("titulo debe ser una cadena de texto")
         
-        if not isinstance(fecha_creacion, Date):
+        if not isinstance(fecha_creacion, date):
             raise TypeError("fecha_creacion debe ser una fecha")
         
         self.__id = id
         self.__c_sonoras = c_sonoras
         self.__c_sentimentales = c_sentimentales
         self.__titulo = titulo
-        self.__fecha_creacion = fecha_creacion
+        self.__fecha_creacion = fecha_creacion        
+
+    def obtenerCaracteristicas(self) -> dict:
+        caracteristicas = {
+            "Titulo": self.__titulo, 
+            "Fecha de creacion": self.__fecha_creacion
+        }
+        
+        diccionarios = [self.__c_sonoras, self.__c_sentimentales]
+        
+        return reduce(lambda a, b: {**a, **b}, diccionarios, caracteristicas)
+    
+class Artista(ElementoCatalogo):
+    def __init__(self, nombre:str, canciones:list[Cancion], fecha_nacimiento:date):
+        if not isinstance(nombre, str):
+            raise TypeError("nombre debe ser una cadena de texto")
+        
+        if not isinstance(canciones, list):
+            raise TypeError("canciones debe ser una lista")
+
+        if not all(isinstance(c, Cancion) for c in canciones):
+            raise TypeError("Todos los elementos deben ser canciones")  
+        
+        if not isinstance(fecha_nacimiento, date):
+            raise TypeError("fecha_nacimiento debe ser una fecha de nacimiento")
+
+        self.__nombre = nombre
+        self.__canciones = canciones
+        self.__fecha_nacimiento = fecha_nacimiento
+
+    def obtenerCaracteristicas(self) -> dict:
+        caracteristicas = {
+            "Nombre": self.__nombre,
+            "Fecha de nacimiento": self.__fecha_nacimiento
+        }
+
+        canciones = list(map(lambda c: {c._Cancion__titulo: c}, self.__canciones))
+
+        return reduce(lambda a, b: {**a, **b}, canciones, caracteristicas)
+
+class ListaReproduccion:
+    def __init__(self, canciones:list[Cancion]):
+        if not isinstance(canciones, list):
+            raise TypeError("canciones debe ser una lista")
+
+        if not all(isinstance(c, Cancion) for c in canciones):
+            raise TypeError("Todos los elementos deben ser canciones") 
+        
+        self.__canciones = canciones
+
+    def obtenerCaracteristicas(self) -> dict:
+        canciones_dict = list(map(lambda c: {c._Cancion__titulo: c}, self.__canciones))
+
+        return reduce(lambda a, b: {**a, **b}, canciones_dict, {})
+
 
 class Sesion:
     def __init__(self, canciones:list[Cancion], media_sonora:float, media_sentimental:float, desviacion_sonora:float, desviacion_sentimental:float):
@@ -81,9 +120,6 @@ class ManejadorSonoro:
     pass
 
 class ManejadorSentimental:
-    pass
-
-class ElementoCatalogo:
     pass
 
 class Recomendacion:
@@ -124,34 +160,6 @@ class SistemaRecomendacion:
         self.__manejador_inicial = manejador_inicial
         self.__sesion = sesion
         self.__tipo_recomendacion = tipo_recomendacion
-
-class Artista:
-    def __init__(self, nombre:str, canciones:list[Cancion], fecha_nacimiento:Date):
-        if not isinstance(nombre, str):
-            raise TypeError("nombre debe ser una cadena de texto")
-        
-        if not isinstance(canciones, list):
-            raise TypeError("canciones debe ser una lista")
-
-        if not all(isinstance(c, Cancion) for c in canciones):
-            raise TypeError("Todos los elementos deben ser canciones")  
-        
-        if not isinstance(fecha_nacimiento, Date):
-            raise TypeError("fecha_nacimiento debe ser una fecha de nacimiento")
-
-        self.__nombre = nombre
-        self.__canciones = canciones
-        self.__fecha_nacimiento = fecha_nacimiento
-
-class ListaReproduccion:
-    def __init__(self, canciones:list[Cancion]):
-        if not isinstance(canciones, list):
-            raise TypeError("canciones debe ser una lista")
-
-        if not all(isinstance(c, Cancion) for c in canciones):
-            raise TypeError("Todos los elementos deben ser canciones") 
-        
-        self.__canciones = canciones
         
 class ServicioStreaming:
     def __init__(self, canciones:list[Cancion], artistas:list[Artista], listas_repro:list[ListaReproduccion]):
