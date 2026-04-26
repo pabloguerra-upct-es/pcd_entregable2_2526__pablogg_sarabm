@@ -69,19 +69,27 @@ class Artista(ElementoCatalogo):
         return reduce(lambda a, b: {**a, **b}, canciones, caracteristicas)
 
 class ListaReproduccion:
-    def __init__(self, canciones:list[Cancion]):
+    def __init__(self, canciones:list[Cancion], nombre:str):
         if not isinstance(canciones, list):
             raise TypeError("canciones debe ser una lista")
 
         if not all(isinstance(c, Cancion) for c in canciones):
             raise TypeError("Todos los elementos deben ser canciones") 
         
+        if not isinstance(nombre, str):
+            raise TypeError("nombre debe ser una cadena de texto")
+        
         self.__canciones = canciones
+        self.__nombre = nombre
 
     def obtenerCaracteristicas(self) -> dict:
+        caracteristicas = {
+            "Nombre Lista": self.__nombre
+        }
+
         canciones_dict = list(map(lambda c: {c._Cancion__titulo: c}, self.__canciones))
 
-        return reduce(lambda a, b: {**a, **b}, canciones_dict, {})
+        return reduce(lambda a, b: {**a, **b}, canciones_dict, caracteristicas)
 
 
 class Sesion:
@@ -135,32 +143,6 @@ class DecoradorRecom:
             raise TypeError("recomendacion debe ser una recomendacion")
         self.__recomendacion = recomendacion
 
-class EstrategiaBusqueda:
-    pass
-
-class SistemaRecomendacion:
-    def __init__(self, instancia:SistemaRecomendacion, estrategia: EstrategiaBusqueda, manejador_inicial:Manejador, sesion:Sesion, tipo_recomendacion):
-        if not isinstance(instancia, SistemaRecomendacion):
-            raise TypeError("instancia debe ser el sistema de recomendacion")
-        
-        if not isinstance(estrategia, EstrategiaBusqueda):
-            raise TypeError("estrategia debe ser una estrategia de busqueda")
-        
-        if not isinstance(manejador_inicial, Manejador):
-            raise TypeError("manejador debe ser el manejador")
-        
-        if not isinstance(sesion, Sesion):
-            raise TypeError("sesion debe ser la sesion")
-        
-        if not isinstance(tipo_recomendacion, (Cancion, Artista, ListaReproduccion)):
-            raise TypeError("tipo_recomendacion debe ser una cancion, un artista o una lista de reproduccion")
-        
-        self.__instancia = instancia
-        self.__estrategia = estrategia
-        self.__manejador_inicial = manejador_inicial
-        self.__sesion = sesion
-        self.__tipo_recomendacion = tipo_recomendacion
-        
 class ServicioStreaming:
     def __init__(self, canciones:list[Cancion], artistas:list[Artista], listas_repro:list[ListaReproduccion]):
         if not isinstance(canciones, list):
@@ -185,6 +167,88 @@ class ServicioStreaming:
         self.__artistas = artistas
         self.__listas_repro = listas_repro
 
+    def getCanciones(self):
+        return self.__canciones
+    
+    def getArtistas(self):
+        return self.__artistas
+    
+    def getListasRepro(self):
+        return self.__listas_repro
+
+class EstrategiaBusqueda(metaclass=ABCMeta):
+    @abstractmethod
+    def buscar(catalogo:ServicioStreaming, sesion:Sesion):
+        if not isinstance(catalogo, ServicioStreaming):
+            raise TypeError("catalogo debe ser un servicio de streaming")
+        
+        if not isinstance(sesion, Sesion):
+            raise TypeError("sesion debe ser una sesion")
+        
+        pass
+
+class Alfabetico(EstrategiaBusqueda):
+    def buscar(self, catalogo:ServicioStreaming, sesion:Sesion):
+        if not isinstance(catalogo, ServicioStreaming):
+            raise TypeError("catalogo debe pertenecer a la clase ServicioStreaming")
+        
+        if not isinstance(sesion, Sesion):
+            raise TypeError("sesion debe pertenecer a la clase Sesion")
+        
+        canciones_ordenadas = sorted(
+            Sesion.__canciones, 
+            key=lambda c: c._Cancion__titulo.lower()
+        ) 
+
+        catalogo_completo = catalogo.get_canciones() + catalogo.get_artistas() + catalogo.get_listas_repro()
+
+        def obtener_nombre(obj):
+            if isinstance(obj, Cancion):
+                return obj.__titulo 
+            else:
+                return obj.__nombre
+
+        catalogo_ordenado = sorted(catalogo_completo, key=lambda x: obtener_nombre(x).lower())
+
+        def coincide(elemento, caracteristica):
+            caracteristicas_elemento = elemento.obtenerCaracteristicas()
+
+            return caract.get(caracteristica) == sesion.__media_sonora
+
+        coincidentes = list(filter(coincide, catalogo_ordenado))
+
+        return coincidentes[0] if coincidentes else None
+
+        
+class Temporal(EstrategiaBusqueda):
+    pass
+
+class Aleatorio:
+    pass
+
+class SistemaRecomendacion:
+    def __init__(self, instancia:SistemaRecomendacion, estrategia: EstrategiaBusqueda, manejador_inicial:Manejador, sesion:Sesion, tipo_recomendacion):
+        if not isinstance(instancia, SistemaRecomendacion):
+            raise TypeError("instancia debe ser el sistema de recomendacion")
+        
+        if not isinstance(estrategia, EstrategiaBusqueda):
+            raise TypeError("estrategia debe ser una estrategia de busqueda")
+        
+        if not isinstance(manejador_inicial, Manejador):
+            raise TypeError("manejador debe ser el manejador")
+        
+        if not isinstance(sesion, Sesion):
+            raise TypeError("sesion debe ser la sesion")
+        
+        if not isinstance(tipo_recomendacion, (Cancion, Artista, ListaReproduccion)):
+            raise TypeError("tipo_recomendacion debe ser una cancion, un artista o una lista de reproduccion")
+        
+        self.__instancia = instancia
+        self.__estrategia = estrategia
+        self.__manejador_inicial = manejador_inicial
+        self.__sesion = sesion
+        self.__tipo_recomendacion = tipo_recomendacion
+
 class RecomArtista:
     pass
 
@@ -194,12 +258,5 @@ class RecomListaRepro:
 class EstrategiaBusqueda:
     pass
 
-class Temporal:
-    pass
 
-class Alfabetico:
-    pass
-
-class Aleatorio:
-    pass
 
