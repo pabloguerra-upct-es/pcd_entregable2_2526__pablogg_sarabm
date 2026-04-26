@@ -197,7 +197,7 @@ class Alfabetico(EstrategiaBusqueda):
         
         canciones_ordenadas = sorted(
             Sesion.__canciones, 
-            key=lambda c: c._Cancion__titulo.lower()
+            key=lambda c: c.__titulo.lower()
         ) 
 
         catalogo_completo = catalogo.get_canciones() + catalogo.get_artistas() + catalogo.get_listas_repro()
@@ -210,13 +210,20 @@ class Alfabetico(EstrategiaBusqueda):
 
         catalogo_ordenado = sorted(catalogo_completo, key=lambda x: obtener_nombre(x).lower())
 
-        def coincide(elemento, caracteristica):
-            caracteristicas_elemento = elemento.obtenerCaracteristicas()
+        def caracteristicas_artista_lista(artlist):
+            sol = []
+            for i in artlist.__canciones:
+                
 
-            return caract.get(caracteristica) == sesion.__media_sonora
 
+        def coincide(elemento):
+            caracteristicas = elemento.obtenerCaracteristicas()
+
+            
+        # Usamos filter (orden superior) para encontrar los que coinciden
         coincidentes = list(filter(coincide, catalogo_ordenado))
 
+        # 5. Devolver el primero de la lista (el que empieza por la A)
         return coincidentes[0] if coincidentes else None
 
         
