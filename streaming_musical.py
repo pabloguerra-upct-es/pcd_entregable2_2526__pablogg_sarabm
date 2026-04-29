@@ -524,14 +524,39 @@ class SistemaRecomendacion:
         
         self.__tipo_recomendacion = tipo
 
-    def procesarCancion(self, id:str, fecha_hora:date):
+    def procesarCancion(self, id:str, fecha_hora:date, catalogo:ServicioStreaming):
         if not isinstance(id, str):
             raise TypeError("id tiene que ser una cadena de texto")
         
         if not isinstance(fecha_hora, date):
             raise TypeError("fecha_hora debe ser una fecha")
         
-        pass
+        if not isinstance(catalogo, ServicioStreaming):
+            raise TypeError("catalogo debe ser un objeto de la clase ServicioStreaming")
+        
+        cancion_encontrada = None
+        for cancion in catalogo.getCanciones():
+            if cancion.__id == id:
+                cancion_encontrada = cancion
+
+        if not cancion_encontrada:
+            raise ValueError(f"No se encontro la cancion con ID: {id}")
+        
+        self.__sesion.agregarCancion(cancion_encontrada)
+
+        if self.__manejador_inicial:
+            self.__manejador_inicial.procesar(self.__sesion)
+        
+        elemento_base = self.__estrategia.buscar(catalogo, self.__sesion)
+        recomendacion = Recomendacion(elemento_base)
+
+        if self.__tipo_recomendacion == Artista:
+            recomendacion = RecomArtista(recomendacion)
+        
+        elif self.__tipo_recomendacion == ListaReproduccion:
+            recomendacion = RecomListaRepro(recomendacion)
+
+        return recomendacion.obtenerResultado()
 
     def recomendar(self, catalogo:ServicioStreaming):
         if not isinstance(catalogo, ServicioStreaming):
