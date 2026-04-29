@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from functools import reduce
 from datetime import date
+import random
 
 class DuplicatedError(Exception):
     pass
@@ -298,8 +299,52 @@ class Temporal(EstrategiaBusqueda):
         except StopIteration:
             return None
 
-class Aleatorio:
-    pass
+class Aleatorio(EstrategiaBusqueda):
+    def buscar(self, catalogo: ServicioStreaming, sesion: Sesion):
+        if not isinstance(catalogo, ServicioStreaming):
+            raise TypeError("catalogo debe pertenecer a la clase ServicioStreaming")
+        
+        if not isinstance(sesion, Sesion):
+            raise TypeError("sesion debe pertenecer a la clase Sesion")
+
+        catalogo_completo = set(catalogo.getCanciones())
+        
+        for artista in catalogo.getArtistas():
+            catalogo_completo.update(artista._Artista__canciones)
+
+        for lista in catalogo.getListasRepro():
+            catalogo_completo.update(lista._ListaReproduccion__canciones)
+
+        canciones_lista = list(catalogo_completo)
+        random.shuffle(canciones_lista) 
+
+        estadisticas_sesion = sesion.obtenerCaracteristicas()
+
+        def coincide(cancion):
+            caract_can = cancion.obtenerCaracteristicas()
+            sonoras = caract_can.get("Caracteristicas Sonoras", {})
+            sentimentales = caract_can.get("Caracteristicas Sentimentales", {})
+
+            for valor in sonoras.values():
+                media = estadisticas_sesion.get("Media Sonora", 0)
+                desv = estadisticas_sesion.get("Desviacion Sonora", 0)
+                if abs(valor - media) > desv:
+                    return False
+            
+            for valor in sentimentales.values():
+                media = estadisticas_sesion.get("Media Sentimental", 0)
+                desv = estadisticas_sesion.get("Desviacion Sentimental", 0)
+                if abs(valor - media) > desv:
+                    return False
+            
+            return True
+
+        coincidentes = filter(coincide, canciones_lista)
+
+        try:
+            return next(coincidentes)
+        except StopIteration:
+            return None
 
 class SistemaRecomendacion:
     def __init__(self, instancia:SistemaRecomendacion, estrategia: EstrategiaBusqueda, manejador_inicial:Manejador, sesion:Sesion, tipo_recomendacion):
