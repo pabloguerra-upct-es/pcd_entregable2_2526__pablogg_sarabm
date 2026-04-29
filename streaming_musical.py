@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from datetime import date
 import random
+from math import sqrt
 
 class DuplicatedError(Exception):
     pass
@@ -159,8 +160,54 @@ class Manejador(ABC):
             return self._siguiente.procesar(catalogo, sesion)
         return None
 
-class ManejadorSonoro:
-    pass
+class ManejadorSonoro(Manejador):
+    def procesar(self, s: Sesion):
+        canciones_sesion = s.__canciones
+
+        media = self._calcularMedia(canciones_sesion)
+        desviacion = self._calcularDesviacion(canciones_sesion, media)
+        
+        s.__media_sonora = media
+        s.__desviacion_sonora = desviacion
+        
+        return super().procesar(s)
+
+    def _calcularMedia(self, lista_canciones:list) -> float:
+        if not isinstance(lista_canciones, list):
+            raise TypeError("lista_canciones debe ser una lista")
+        
+        suma = 0
+        conteo = 0
+
+        for cancion in lista_canciones:
+            datos = cancion.obtenerCaracteristicas()
+            sonoras = datos.get("Caracteristicas Sonoras", {})
+
+            for valor in sonoras.values():
+                suma += valor
+                conteo += 1
+
+        return suma / conteo
+
+    def _calcularDesviacion(self, lista_canciones, media: float) -> float:
+        if not lista_canciones:
+            return 0.0
+            
+        suma_cuadrados = 0.0
+        conteo = 0
+        
+        for cancion in lista_canciones:
+            datos = cancion.obtenerCaracteristicas()
+            sonoras = datos.get("Caracteristicas Sonoras", {})
+            
+            for valor in sonoras.values():
+                suma_cuadrados += (valor - media) ** 2
+                conteo += 1
+                
+        if conteo == 0:
+            return 0.0
+            
+        return sqrt(suma_cuadrados / conteo)
 
 class ManejadorSentimental:
     pass
@@ -285,7 +332,7 @@ class Temporal(EstrategiaBusqueda):
 
         canciones_ordenadas = sorted(
             list(catalogo_completo), 
-            key=lambda c: c._Cancion__fecha_creacion,
+            key=lambda c: c.__fecha_creacion,
             reverse=True
         )
 
