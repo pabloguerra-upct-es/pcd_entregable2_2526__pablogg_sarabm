@@ -6,6 +6,9 @@ from math import sqrt
 class DuplicatedError(Exception):
     pass
 
+class SingletonException(Exception):
+    pass
+
 class ElementoCatalogo(ABC):
     @abstractmethod
     def obtenerCaracteristicas(self):
@@ -490,24 +493,53 @@ class RecomListaRepro(DecoradorRecom):
     pass
 
 class SistemaRecomendacion:
-    def __init__(self, instancia:"SistemaRecomendacion", estrategia: EstrategiaBusqueda, manejador_inicial:Manejador, sesion:Sesion, tipo_recomendacion):
-        if not isinstance(instancia, SistemaRecomendacion):
-            raise TypeError("instancia debe ser el sistema de recomendacion")
+    __instancia = None
+
+    def __init__(self):
+        if SistemaRecomendacion.__instancia is not None:
+            raise SingletonException("Al ser un Singleton, debes usar primero getInstancia")       
         
-        if not isinstance(estrategia, EstrategiaBusqueda):
-            raise TypeError("estrategia debe ser una estrategia de busqueda")
+        self.__instancia = None
+        self.__estrategia = None
+        self.__manejador_inicial = None
+        self.__sesion = None
+        self.__tipo_recomendacion = None
+
+    @classmethod
+    def getInstancia(cls):
+        if cls.__instancia is None:
+            cls.__instancia = cls()
         
-        if not isinstance(manejador_inicial, Manejador):
-            raise TypeError("manejador debe ser el manejador")
+        return cls.__instancia
+    
+    def setEstrategia(self, e:EstrategiaBusqueda):
+        if not isinstance(e, EstrategiaBusqueda):
+            raise TypeError("e debe ser un objeto de la clase Estrategia Busqueda")
         
-        if not isinstance(sesion, Sesion):
-            raise TypeError("sesion debe ser la sesion")
+        self.__estrategia = e
+
+    def setTipoRecomendacion(self, tipo:ElementoCatalogo):
+        if not isinstance(tipo, ElementoCatalogo):
+            raise TypeError("tipo debe ser un objeto de la clase ElementoCatalogo")
         
-        if not isinstance(tipo_recomendacion, (Cancion, Artista, ListaReproduccion)):
-            raise TypeError("tipo_recomendacion debe ser una cancion, un artista o una lista de reproduccion")
+        self.__tipo_recomendacion = tipo
+
+    def procesarCancion(self, id:str, fecha_hora:date):
+        if not isinstance(id, str):
+            raise TypeError("id tiene que ser una cadena de texto")
         
-        self.__instancia = instancia
-        self.__estrategia = estrategia
-        self.__manejador_inicial = manejador_inicial
-        self.__sesion = sesion
-        self.__tipo_recomendacion = tipo_recomendacion
+        if not isinstance(fecha_hora, date):
+            raise TypeError("fecha_hora debe ser una fecha")
+        
+        pass
+
+    def recomendar(self, catalogo:ServicioStreaming):
+        if not isinstance(catalogo, ServicioStreaming):
+            raise TypeError()
+        
+        if not self.__estrategia or not self.__sesion:
+            raise ValueError
+        
+        self.__manejador_inicial.procesar(self.__sesion)
+
+        elemento_base = self.__estrategia.buscar(catalogo, self.__sesion)
