@@ -89,30 +89,18 @@ class ListaReproduccion:
         return solucion
 
 class Sesion:
-    def __init__(self, canciones:list[Cancion], media_sonora:float, media_sentimental:float, desviacion_sonora:float, desviacion_sentimental:float):
+    def __init__(self, canciones:list[Cancion]):
         if not isinstance(canciones, list):
             raise TypeError("canciones debe ser una lista")
 
         if not all(isinstance(c, Cancion) for c in canciones):
             raise TypeError("Todos los elementos deben ser canciones")  
             
-        if not isinstance(media_sonora, float):
-            raise TypeError("media_sonora debe ser un numero decimal (float)")
-        
-        if not isinstance(media_sentimental, float):
-            raise TypeError("media_sentimental debe ser un numero decimal (float)")
-        
-        if not isinstance(desviacion_sonora, float):
-            raise TypeError("desviacion_sonora debe ser un numero decimal (float)")
-        
-        if not isinstance(desviacion_sentimental, float):
-            raise TypeError("desviacion_sentimental debe ser un numero decimal (float)")
-        
         self.__canciones = canciones
-        self.__media_sonora = media_sonora
-        self.__media_sentimental = media_sentimental
-        self.__desviacion_sonora = desviacion_sonora
-        self.__desviacion_sentimental = desviacion_sentimental
+        self.__media_sonora = 0
+        self.__media_sentimental = 0
+        self.__desviacion_sonora = 0
+        self.__desviacion_sentimental = 0
 
     def agregarCancion(self, c):
         if not isinstance(c, Cancion):
@@ -127,22 +115,26 @@ class Sesion:
     def obtenerCanciones(self):
         return self.__canciones
     
-    def obtenerCaracteristicas(self):
-        solucion = {}
-        solucion["Media Sonora"] = self.__media_sonora
-        solucion["Media Sentimental"] = self.__media_sentimental
-        solucion["Desviacion Sonora"] = self.__desviacion_sonora
-        solucion["Desviacion Sentimental"] = self.__desviacion_sentimental
-        return solucion
+    def obtenerCaracteristicas(self, m:"Manejador"): 
+        if not isinstance(m, Manejador):
+            raise TypeError("m debe pertenecer a la clase Manejador")
+        
+        m.procesar(self)
+        return {
+        "Media Sonora":self.__media_sonora,
+        "Media Sentimental" : self.__media_sentimental,
+        "Desviacion Sonora":self.__desviacion_sonora,
+        "Desviacion Sentimental":self.__desviacion_sentimental
+        }
 
 class Manejador(ABC):
-    def __init__(self, siguiente: Manejador = None):
+    def __init__(self, siguiente: "Manejador" = None):
         if siguiente is not None and not isinstance(siguiente, Manejador):
             raise TypeError("siguiente debe ser un Manejador")
         
         self._siguiente = siguiente
 
-    def setSiguiente(self, m: Manejador):
+    def setSiguiente(self, m: "Manejador"):
         """Permite cambiar o establecer el siguiente manejador en la cadena."""
         if not isinstance(m, Manejador):
             raise TypeError("El nuevo manejador debe pertenecer a la clase Manejador")
@@ -151,13 +143,16 @@ class Manejador(ABC):
         return m
 
     @abstractmethod
-    def procesar(self, catalogo, sesion):
+    def procesar(self, sesion:Sesion):
+
+        if not isinstance(sesion, Sesion):
+            raise TypeError("sesion debe pertenecer a la clase Sesion")
         """
         Método abstracto que deben implementar los manejadores concretos.
         Si este manejador no puede resolver la petición, la pasa al siguiente.
         """
         if self._siguiente:
-            return self._siguiente.procesar(catalogo, sesion)
+            return self._siguiente.procesar(sesion)
         return None
 
 class ManejadorSonoro(Manejador):
@@ -165,13 +160,13 @@ class ManejadorSonoro(Manejador):
         if not isinstance(s, Sesion):
             raise TypeError("s debe pertenecer a la clase Sesion")
         
-        canciones_sesion = s.__canciones
+        canciones_sesion = s.obtenerCanciones()
 
         media = self._calcularMedia(canciones_sesion)
         desviacion = self._calcularDesviacion(canciones_sesion, media)
         
-        s.__media_sonora = media
-        s.__desviacion_sonora = desviacion
+        s._Sesion__media_sonora = media
+        s._Sesion__desviacion_sonora = desviacion
         
         return super().procesar(s)
 
@@ -223,14 +218,14 @@ class ManejadorSentimental(Manejador):
         if not isinstance(s, Sesion):
             raise TypeError("s debe pertenecer a la clase Sesion")
         
-        canciones_sesion = s.__canciones
+        canciones_sesion = s.obtenerCanciones()
 
         media = self._calcularMedia(canciones_sesion)
         
         desviacion = self._calcularDesviacion(canciones_sesion, media)
         
-        s.__media_sentimental = media
-        s.__desviacion_sentimental = desviacion
+        s._Sesion__media_sentimental = media
+        s._Sesion__desviacion_sentimental = desviacion
                 
         return super().procesar(s)
 
@@ -480,7 +475,7 @@ class Aleatorio(EstrategiaBusqueda):
             return None
 
 class SistemaRecomendacion:
-    def __init__(self, instancia:SistemaRecomendacion, estrategia: EstrategiaBusqueda, manejador_inicial:Manejador, sesion:Sesion, tipo_recomendacion):
+    def __init__(self, instancia:"SistemaRecomendacion", estrategia: EstrategiaBusqueda, manejador_inicial:Manejador, sesion:Sesion, tipo_recomendacion):
         if not isinstance(instancia, SistemaRecomendacion):
             raise TypeError("instancia debe ser el sistema de recomendacion")
         
