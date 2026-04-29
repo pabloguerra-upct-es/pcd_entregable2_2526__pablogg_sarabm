@@ -485,7 +485,8 @@ class RecomArtista(DecoradorRecom):
         resultado = super().obtenerResultado()
         return resultado
 
-class RecomListaRepro:
+class RecomListaRepro(DecoradorRecom):
+    resultado = super().obtenerResultado()
     pass
 
 class SistemaRecomendacion:
