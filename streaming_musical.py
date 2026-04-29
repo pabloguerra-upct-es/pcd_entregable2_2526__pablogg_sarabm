@@ -1,12 +1,11 @@
-from abc import ABCMeta, abstractmethod
-from functools import reduce
+from abc import ABC, abstractmethod
 from datetime import date
 import random
 
 class DuplicatedError(Exception):
     pass
 
-class ElementoCatalogo(metaclass = ABCMeta):
+class ElementoCatalogo(ABC):
     @abstractmethod
     def obtenerCaracteristicas(self):
         pass
@@ -135,11 +134,30 @@ class Sesion:
         solucion["Desviacion Sentimental"] = self.__desviacion_sentimental
         return solucion
 
-class Manejador:
-    def __init__(self, siguiente:Manejador):
-        if not isinstance(siguiente, Manejador):
+class Manejador(ABC):
+    def __init__(self, siguiente: Manejador = None):
+        if siguiente is not None and not isinstance(siguiente, Manejador):
             raise TypeError("siguiente debe ser un Manejador")
+        
         self._siguiente = siguiente
+
+    def setSiguiente(self, m: Manejador):
+        """Permite cambiar o establecer el siguiente manejador en la cadena."""
+        if not isinstance(m, Manejador):
+            raise TypeError("El nuevo manejador debe pertenecer a la clase Manejador")
+        
+        self._siguiente = m
+        return m
+
+    @abstractmethod
+    def procesar(self, catalogo, sesion):
+        """
+        Método abstracto que deben implementar los manejadores concretos.
+        Si este manejador no puede resolver la petición, la pasa al siguiente.
+        """
+        if self._siguiente:
+            return self._siguiente.procesar(catalogo, sesion)
+        return None
 
 class ManejadorSonoro:
     pass
@@ -193,7 +211,7 @@ class ServicioStreaming:
     def getListasRepro(self):
         return self.__listas_repro
 
-class EstrategiaBusqueda(metaclass=ABCMeta):
+class EstrategiaBusqueda(ABC):
     @abstractmethod
     def buscar(catalogo:ServicioStreaming, sesion:Sesion):
         if not isinstance(catalogo, ServicioStreaming):
