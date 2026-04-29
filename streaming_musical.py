@@ -125,6 +125,14 @@ class Sesion:
 
     def obtenerCanciones(self):
         return self.__canciones
+    
+    def obtenerCaracteristicas(self):
+        solucion = {}
+        solucion["Media Sonora"] = self.__media_sonora
+        solucion["Media Sentimental"] = self.__media_sentimental
+        solucion["Desviacion Sonora"] = self.__desviacion_sonora
+        solucion["Desviacion Sentimental"] = self.__desviacion_sentimental
+        return solucion
 
 class Manejador:
     def __init__(self, siguiente:Manejador):
