@@ -2,6 +2,9 @@ from abc import ABCMeta, abstractmethod
 from functools import reduce
 from datetime import date
 
+class DuplicatedError(Exception):
+    pass
+
 class ElementoCatalogo(metaclass = ABCMeta):
     @abstractmethod
     def obtenerCaracteristicas(self):
@@ -110,6 +113,19 @@ class Sesion:
         self.__desviacion_sonora = desviacion_sonora
         self.__desviacion_sentimental = desviacion_sentimental
 
+    def agregarCancion(self, c):
+        if not isinstance(c, Cancion):
+            raise TypeError("c debe pertenecer a la clase Cancion")
+        
+        for i in self.__canciones:
+            if i == c:
+                raise DuplicatedError("Esa cancion ya se encuentra en la lista de canciones")
+            
+        self.__canciones.append(c)
+
+    def obtenerCanciones(self):
+        return self.__canciones
+
 class Manejador:
     def __init__(self, siguiente:Manejador):
         if not isinstance(siguiente, Manejador):
@@ -186,11 +202,6 @@ class Alfabetico(EstrategiaBusqueda):
         
         if not isinstance(sesion, Sesion):
             raise TypeError("sesion debe pertenecer a la clase Sesion")
-        
-        canciones_ordenadas = sorted(
-            Sesion.__canciones, 
-            key=lambda c: c.__titulo.lower()
-        ) 
 
         catalogo_completo = catalogo.get_canciones() + catalogo.get_artistas() + catalogo.get_listas_repro()
 
@@ -202,14 +213,10 @@ class Alfabetico(EstrategiaBusqueda):
 
         catalogo_ordenado = sorted(catalogo_completo, key=lambda x: obtener_nombre(x).lower())
 
-        def caracteristicas_artista_lista(artlist):
-            sol = []
-            for i in artlist.__canciones:
-                
-
-
         def coincide(elemento):
             caracteristicas = elemento.obtenerCaracteristicas()
+
+            criterios_usuario = sesion.obtener
 
             
         coincidentes = list(filter(coincide, catalogo_ordenado))
