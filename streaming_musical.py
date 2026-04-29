@@ -211,25 +211,41 @@ class Alfabetico(EstrategiaBusqueda):
         if not isinstance(sesion, Sesion):
             raise TypeError("sesion debe pertenecer a la clase Sesion")
 
-        catalogo_completo = catalogo.get_canciones() + catalogo.get_artistas() + catalogo.get_listas_repro()
+        catalogo_completo = set(catalogo.getCanciones())
+        for artista in catalogo.getArtistas():
+            catalogo_completo.update(artista.__canciones)
 
-        def obtener_nombre(obj):
-            if isinstance(obj, Cancion):
-                return obj.__titulo 
-            else:
-                return obj.__nombre
+        for lista in catalogo.getListasRepro():
+            catalogo_completo.update(lista.__canciones)
 
-        catalogo_ordenado = sorted(catalogo_completo, key=lambda x: obtener_nombre(x).lower())
+        canciones_ordenadas = sorted(
+            list(catalogo_completo), 
+            key=lambda c: c._Cancion__titulo.lower()
+        )
 
-        def coincide(elemento):
-            caracteristicas = elemento.obtenerCaracteristicas()
+        estadisticas_sesion = sesion.obtenerCaracteristicas()
 
-            criterios_usuario = sesion.obtener
+        def coincide(cancion):
+            caract_can = cancion.obtenerCaracteristicas()
 
+            sonoras = caract_can.get("Caracteristicas Sonoras", {})
+            sentimentales = caract_can.get("Caracteristicas Sentimentales", {})
+
+            for clave, valor in sonoras.items():
+                media = estadisticas_sesion.get("Media Sonora", 0)
+                desv = estadisticas_sesion.get("Desviacion Sonora", 0)
+                
+                if abs(valor - media) > desv:
+                    return False
             
-        coincidentes = list(filter(coincide, catalogo_ordenado))
+            return True
 
-        return coincidentes[0] if coincidentes else None
+        coincidentes = filter(coincide, canciones_ordenadas)
+
+        try:
+            return next(coincidentes)
+        except StopIteration:
+            return None
 
         
 class Temporal(EstrategiaBusqueda):
