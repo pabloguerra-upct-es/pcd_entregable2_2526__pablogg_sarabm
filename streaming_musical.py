@@ -480,8 +480,10 @@ class DecoradorRecom(Recomendacion):
     def obtenerResultado(self):
         return self.__recomendacion.obtenerResultado()
 
-class RecomArtista:
-    pass
+class RecomArtista(DecoradorRecom):
+    def obtenerResultado(self):
+        resultado = super().obtenerResultado()
+        return resultado
 
 class RecomListaRepro:
     pass
