@@ -31,14 +31,10 @@ class Cancion(ElementoCatalogo):
         self.__fecha_creacion = fecha_creacion        
 
     def obtenerCaracteristicas(self) -> dict:
-        caracteristicas = {
-            "Titulo": self.__titulo, 
-            "Fecha de creacion": self.__fecha_creacion
-        }
-        
-        diccionarios = [self.__c_sonoras, self.__c_sentimentales]
-        
-        return reduce(lambda a, b: {**a, **b}, diccionarios, caracteristicas)
+        solucion = {}
+        solucion["Caracteristicas Sonoras"] = self.__c_sonoras
+        solucion["Caracteristicas Sentimentales"] = self.__c_sentimentales
+        return solucion
     
 class Artista(ElementoCatalogo):
     def __init__(self, nombre:str, canciones:list[Cancion], fecha_nacimiento:date):
@@ -59,15 +55,13 @@ class Artista(ElementoCatalogo):
         self.__fecha_nacimiento = fecha_nacimiento
 
     def obtenerCaracteristicas(self) -> dict:
-        caracteristicas = {
-            "Nombre": self.__nombre,
-            "Fecha de nacimiento": self.__fecha_nacimiento
-        }
-
-        canciones = list(map(lambda c: {c._Cancion__titulo: c}, self.__canciones))
-
-        return reduce(lambda a, b: {**a, **b}, canciones, caracteristicas)
-
+        solucion = {}
+        for cancion in self.__canciones:            
+            titulo = cancion.__titulo 
+            solucion[titulo] = cancion.obtenerCaracteristicas()
+            
+        return solucion
+    
 class ListaReproduccion:
     def __init__(self, canciones:list[Cancion], nombre:str):
         if not isinstance(canciones, list):
@@ -83,14 +77,12 @@ class ListaReproduccion:
         self.__nombre = nombre
 
     def obtenerCaracteristicas(self) -> dict:
-        caracteristicas = {
-            "Nombre Lista": self.__nombre
-        }
-
-        canciones_dict = list(map(lambda c: {c._Cancion__titulo: c}, self.__canciones))
-
-        return reduce(lambda a, b: {**a, **b}, canciones_dict, caracteristicas)
-
+        solucion = {}
+        for cancion in self.__canciones:            
+            titulo = cancion.__titulo 
+            solucion[titulo] = cancion.obtenerCaracteristicas()
+            
+        return solucion
 
 class Sesion:
     def __init__(self, canciones:list[Cancion], media_sonora:float, media_sentimental:float, desviacion_sonora:float, desviacion_sentimental:float):
@@ -220,10 +212,8 @@ class Alfabetico(EstrategiaBusqueda):
             caracteristicas = elemento.obtenerCaracteristicas()
 
             
-        # Usamos filter (orden superior) para encontrar los que coinciden
         coincidentes = list(filter(coincide, catalogo_ordenado))
 
-        # 5. Devolver el primero de la lista (el que empieza por la A)
         return coincidentes[0] if coincidentes else None
 
         
