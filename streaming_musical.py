@@ -469,11 +469,16 @@ class Recomendacion:
     def obtenerResultado(self):
         return self._elemento
 
-class DecoradorRecom:
+class DecoradorRecom(Recomendacion):
     def __init__(self, recomendacion:Recomendacion):
+        super().__init__(recomendacion._elemento)
         if not isinstance(recomendacion, Recomendacion):
             raise TypeError("recomendacion debe ser una recomendacion")
+        
         self.__recomendacion = recomendacion
+
+    def obtenerResultado(self):
+        return self.__recomendacion.obtenerResultado()
 
 class RecomArtista:
     pass
