@@ -275,19 +275,6 @@ class ManejadorSentimental(Manejador):
             
         return sqrt(suma_cuadrados / conteo)
 
-class Recomendacion:
-    def __init__(self, elemento:ElementoCatalogo):
-        if not isinstance(elemento, ElementoCatalogo):
-            raise TypeError("elemento debe ser un elemento del catalogo")
-        
-        self._elemento = elemento
-
-class DecoradorRecom:
-    def __init__(self, recomendacion:Recomendacion):
-        if not isinstance(recomendacion, Recomendacion):
-            raise TypeError("recomendacion debe ser una recomendacion")
-        self.__recomendacion = recomendacion
-
 class ServicioStreaming:
     def __init__(self, canciones:list[Cancion], artistas:list[Artista], listas_repro:list[ListaReproduccion]):
         if not isinstance(canciones, list):
@@ -358,9 +345,8 @@ class Alfabetico(EstrategiaBusqueda):
             caract_can = cancion.obtenerCaracteristicas()
 
             sonoras = caract_can.get("Caracteristicas Sonoras", {})
-            sentimentales = caract_can.get("Caracteristicas Sentimentales", {})
 
-            for clave, valor in sonoras.items():
+            for valor in sonoras.values():
                 media = estadisticas_sesion.get("Media Sonora", 0)
                 desv = estadisticas_sesion.get("Desviacion Sonora", 0)
                 
@@ -375,7 +361,6 @@ class Alfabetico(EstrategiaBusqueda):
             return next(coincidentes)
         except StopIteration:
             return None
-
         
 class Temporal(EstrategiaBusqueda):
     def buscar(self, catalogo: ServicioStreaming, sesion: Sesion):
@@ -474,6 +459,28 @@ class Aleatorio(EstrategiaBusqueda):
         except StopIteration:
             return None
 
+class Recomendacion:
+    def __init__(self, elemento:ElementoCatalogo):
+        if not isinstance(elemento, ElementoCatalogo):
+            raise TypeError("elemento debe ser un elemento del catalogo")
+        
+        self._elemento = elemento
+
+    def obtenerResultado(self):
+        return self._elemento
+
+class DecoradorRecom:
+    def __init__(self, recomendacion:Recomendacion):
+        if not isinstance(recomendacion, Recomendacion):
+            raise TypeError("recomendacion debe ser una recomendacion")
+        self.__recomendacion = recomendacion
+
+class RecomArtista:
+    pass
+
+class RecomListaRepro:
+    pass
+
 class SistemaRecomendacion:
     def __init__(self, instancia:"SistemaRecomendacion", estrategia: EstrategiaBusqueda, manejador_inicial:Manejador, sesion:Sesion, tipo_recomendacion):
         if not isinstance(instancia, SistemaRecomendacion):
@@ -496,12 +503,3 @@ class SistemaRecomendacion:
         self.__manejador_inicial = manejador_inicial
         self.__sesion = sesion
         self.__tipo_recomendacion = tipo_recomendacion
-
-class RecomArtista:
-    pass
-
-class RecomListaRepro:
-    pass
-
-class EstrategiaBusqueda:
-    pass
