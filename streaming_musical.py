@@ -162,6 +162,9 @@ class Manejador(ABC):
 
 class ManejadorSonoro(Manejador):
     def procesar(self, s: Sesion):
+        if not isinstance(s, Sesion):
+            raise TypeError("s debe pertenecer a la clase Sesion")
+        
         canciones_sesion = s.__canciones
 
         media = self._calcularMedia(canciones_sesion)
@@ -189,7 +192,13 @@ class ManejadorSonoro(Manejador):
 
         return suma / conteo
 
-    def _calcularDesviacion(self, lista_canciones, media: float) -> float:
+    def _calcularDesviacion(self, lista_canciones: list, media: float) -> float:
+        if not isinstance(lista_canciones, list):
+            raise TypeError("lista_canciones debe ser una lista")
+        
+        if not isinstance(media, float):
+            raise TypeError("media debe ser un numero decimal")
+        
         if not lista_canciones:
             return 0.0
             
@@ -209,8 +218,67 @@ class ManejadorSonoro(Manejador):
             
         return sqrt(suma_cuadrados / conteo)
 
-class ManejadorSentimental:
-    pass
+class ManejadorSentimental(Manejador):
+    def procesar(self, s: Sesion):
+        if not isinstance(s, Sesion):
+            raise TypeError("s debe pertenecer a la clase Sesion")
+        
+        canciones_sesion = s.__canciones
+
+        media = self._calcularMedia(canciones_sesion)
+        
+        desviacion = self._calcularDesviacion(canciones_sesion, media)
+        
+        s.__media_sentimental = media
+        s.__desviacion_sentimental = desviacion
+                
+        return super().procesar(s)
+
+    def _calcularMedia(self, lista_canciones: list) -> float:
+        if not isinstance(lista_canciones, list):
+            raise TypeError("lista_canciones debe ser una lista")
+        
+        if not lista_canciones:
+            return 0.0
+        
+        suma = 0.0
+        conteo = 0
+
+        for cancion in lista_canciones:
+            datos = cancion.obtenerCaracteristicas()
+            sentimentales = datos.get("Caracteristicas Sentimentales", {})
+
+            for valor in sentimentales.values():
+                suma += valor
+                conteo += 1
+
+        return suma / conteo 
+
+    def _calcularDesviacion(self, lista_canciones: list, media: float) -> float:
+        if not isinstance(lista_canciones, list):
+            raise TypeError("lista_canciones debe ser una lista")
+        
+        if not isinstance(media, float):
+            raise TypeError("media debe ser un numero decimal")
+        
+        if not lista_canciones:
+            return 0.0
+            
+        suma_cuadrados = 0.0
+        conteo = 0
+        
+        for cancion in lista_canciones:
+            datos = cancion.obtenerCaracteristicas()
+            sentimentales = datos.get("Caracteristicas Sentimentales", {})
+            
+            for valor in sentimentales.values():
+                suma_cuadrados += (valor - media) ** 2
+                conteo += 1
+                
+        if conteo == 0:
+            return 0.0
+            
+        return sqrt(suma_cuadrados / conteo)
 
 class Recomendacion:
     def __init__(self, elemento:ElementoCatalogo):
