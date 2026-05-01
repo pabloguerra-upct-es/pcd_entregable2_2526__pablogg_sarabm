@@ -153,12 +153,10 @@ class Manejador(ABC):
 
         if not isinstance(sesion, Sesion):
             raise TypeError("sesion debe pertenecer a la clase Sesion")
-        """
-        Método abstracto que deben implementar los manejadores concretos.
-        Si este manejador no puede resolver la petición, la pasa al siguiente.
-        """
+
         if self._siguiente:
             return self._siguiente.procesar(sesion)
+        
         return None
 
 class ManejadorSonoro(Manejador):
@@ -168,11 +166,12 @@ class ManejadorSonoro(Manejador):
         
         canciones_sesion = s.obtenerCanciones()
 
-        media = self._calcularMedia(canciones_sesion)
-        desviacion = self._calcularDesviacion(canciones_sesion, media)
-        
-        s._Sesion__media_sonora = media
-        s._Sesion__desviacion_sonora = desviacion
+        if canciones_sesion:
+            media = self._calcularMedia(canciones_sesion)
+            desviacion = self._calcularDesviacion(canciones_sesion, media)
+            
+            s._Sesion__media_sonora = media
+            s._Sesion__desviacion_sonora = desviacion
         
         return super().procesar(s)
 
@@ -191,7 +190,7 @@ class ManejadorSonoro(Manejador):
                 suma += valor
                 conteo += 1
 
-        return suma / conteo
+        return suma / conteo if conteo > 0 else 0.0
 
     def _calcularDesviacion(self, lista_canciones: list, media: float) -> float:
         if not isinstance(lista_canciones, list):
@@ -213,25 +212,23 @@ class ManejadorSonoro(Manejador):
             for valor in sonoras.values():
                 suma_cuadrados += (valor - media) ** 2
                 conteo += 1
-                
-        if conteo == 0:
-            return 0.0
             
-        return sqrt(suma_cuadrados / conteo)
+        return sqrt(suma_cuadrados / conteo) if conteo > 0 else 0
 
 class ManejadorSentimental(Manejador):
     def procesar(self, s: Sesion):
         if not isinstance(s, Sesion):
             raise TypeError("s debe pertenecer a la clase Sesion")
         
-        canciones_sesion = s.obtenerCanciones()
+        if canciones_sesion:        
+            canciones_sesion = s.obtenerCanciones()
 
-        media = self._calcularMedia(canciones_sesion)
-        
-        desviacion = self._calcularDesviacion(canciones_sesion, media)
-        
-        s._Sesion__media_sentimental = media
-        s._Sesion__desviacion_sentimental = desviacion
+            media = self._calcularMedia(canciones_sesion)
+            
+            desviacion = self._calcularDesviacion(canciones_sesion, media)
+            
+            s._Sesion__media_sentimental = media
+            s._Sesion__desviacion_sentimental = desviacion
                 
         return super().procesar(s)
 
@@ -253,7 +250,7 @@ class ManejadorSentimental(Manejador):
                 suma += valor
                 conteo += 1
 
-        return suma / conteo 
+        return suma / conteo if conteo > 0 else 0
 
     def _calcularDesviacion(self, lista_canciones: list, media: float) -> float:
         if not isinstance(lista_canciones, list):
@@ -275,11 +272,8 @@ class ManejadorSentimental(Manejador):
             for valor in sentimentales.values():
                 suma_cuadrados += (valor - media) ** 2
                 conteo += 1
-                
-        if conteo == 0:
-            return 0.0
             
-        return sqrt(suma_cuadrados / conteo)
+        return sqrt(suma_cuadrados / conteo) if conteo > 0 else 0
 
 class ServicioStreaming:
     def __init__(self, canciones:list[Cancion], artistas:list[Artista], listas_repro:list[ListaReproduccion]):
