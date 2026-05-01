@@ -221,11 +221,11 @@ class ManejadorSentimental(Manejador):
         if not isinstance(s, Sesion):
             raise TypeError("s debe pertenecer a la clase Sesion")
         
+        canciones_sesion = s.obtenerCanciones()
+
         if canciones_sesion:        
-            canciones_sesion = s.obtenerCanciones()
 
             media = self._calcularMedia(canciones_sesion)
-            
             desviacion = self._calcularDesviacion(canciones_sesion, media)
             
             s._Sesion__media_sentimental = media
@@ -490,10 +490,10 @@ class RecomArtista(DecoradorRecom):
         super().__init__(recomendacion)
         self.__catalogo = catalogo
 
-    def obtenerResultado(self, catalogo):
+    def obtenerResultado(self):
         cancion = super().obtenerResultado()
 
-        for artista in catalogo.getArtistas():
+        for artista in self.__catalogo.getArtistas():
             if cancion in artista._Artista__canciones:
                 return artista
         
@@ -510,10 +510,10 @@ class RecomListaRepro(DecoradorRecom):
         super().__init__(recomendacion)
         self.__catalogo = catalogo
 
-    def obtenerResultado(self, catalogo):
+    def obtenerResultado(self):
         cancion = super().obtenerResultado()
 
-        for lista in catalogo.getListasRepro():
+        for lista in self.__catalogo.getListasRepro():
             if cancion in lista._ListaReproduccion__canciones:
                 return lista
         
@@ -526,7 +526,7 @@ class SistemaRecomendacion:
         if SistemaRecomendacion.__instancia is not None:
             raise SingletonException("Al ser un Singleton, debes usar primero getInstancia")       
         
-        self.__instancia = None
+        SistemaRecomendacion.__instancia = self
         self.__estrategia = None
         self.__manejador_inicial = None
         self.__sesion = None
@@ -534,10 +534,10 @@ class SistemaRecomendacion:
 
     @classmethod
     def getInstancia(cls):
-        if cls.__instancia is None:
-            cls.__instancia = cls()
+        if cls._SistemaRecomendacion__instancia is None:
+            cls._SistemaRecomendacion__instancia = cls()
         
-        return cls.__instancia
+        return cls._SistemaRecomendacion__instancia
     
     def setEstrategia(self, e:EstrategiaBusqueda):
         if not isinstance(e, EstrategiaBusqueda):
@@ -578,7 +578,7 @@ class SistemaRecomendacion:
         
         cancion_encontrada = None
         for cancion in catalogo.getCanciones():
-            if cancion.__id == id:
+            if cancion._Cancion__id == id:
                 cancion_encontrada = cancion
 
         if not cancion_encontrada:
@@ -600,9 +600,9 @@ class SistemaRecomendacion:
         recomendacion = Recomendacion(elemento_base)
 
         if self.__tipo_recomendacion == Artista:
-            recomendacion = RecomArtista(recomendacion)
+            recomendacion = RecomArtista(recomendacion, catalogo)
         
         elif self.__tipo_recomendacion == ListaReproduccion:
-            recomendacion = RecomListaRepro(recomendacion)
+            recomendacion = RecomListaRepro(recomendacion, catalogo)
 
         return recomendacion.obtenerResultado()
