@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import date
 import random
 from math import sqrt
-import asyncio
+import itertools
 
 class DuplicatedError(Exception):
     pass
@@ -328,12 +328,11 @@ class Alfabetico(EstrategiaBusqueda):
         if not isinstance(sesion, Sesion):
             raise TypeError("sesion debe pertenecer a la clase Sesion")
 
-        catalogo_completo = set(catalogo.getCanciones())
-        for artista in catalogo.getArtistas():
-            catalogo_completo.update(artista._Artista.__canciones)
-
-        for lista in catalogo.getListasRepro():
-            catalogo_completo.update(lista._ListaReproduccion.__canciones)
+        catalogo_completo = set(itertools.chain(
+            catalogo.getCanciones(),
+            *(artista._Artista__canciones for artista in catalogo.getArtistas()),
+            *(lista._ListaReproduccion__canciones for lista in catalogo.getListasRepro())
+        ))
 
         canciones_ordenadas = sorted(
             list(catalogo_completo), 
@@ -344,8 +343,8 @@ class Alfabetico(EstrategiaBusqueda):
 
         def coincide(cancion):
             caract_can = cancion.obtenerCaracteristicas()
-
             sonoras = caract_can.get("Caracteristicas Sonoras", {})
+            sentimentales = caract_can.get("Caracteristicas Sentimentales", {})
 
             for valor in sonoras.values():
                 media = estadisticas_sesion.get("Media Sonora", 0)
@@ -353,15 +352,18 @@ class Alfabetico(EstrategiaBusqueda):
                 
                 if abs(valor - media) > desv:
                     return False
+                
+            for valor in sentimentales.values():
+                media = estadisticas_sesion.get("Media Sentimental", 0)
+                desv = estadisticas_sesion.get("Desviacion Sentimental", 0)
+                
+                if abs(valor - media) > desv:
+                    return False
             
             return True
 
         coincidentes = filter(coincide, canciones_ordenadas)
-
-        try:
-            return next(coincidentes)
-        except StopIteration:
-            return None
+        return next(coincidentes, None)
         
 class Temporal(EstrategiaBusqueda):
     def buscar(self, catalogo: ServicioStreaming, sesion: Sesion):
@@ -371,13 +373,11 @@ class Temporal(EstrategiaBusqueda):
         if not isinstance(sesion, Sesion):
             raise TypeError("sesion debe pertenecer a la clase Sesion")
 
-        catalogo_completo = set(catalogo.getCanciones())
-        
-        for artista in catalogo.getArtistas():
-            catalogo_completo.update(artista.__canciones)
-
-        for lista in catalogo.getListasRepro():
-            catalogo_completo.update(lista.__canciones)
+        catalogo_completo = set(itertools.chain(
+            catalogo.getCanciones(),
+            *(artista._Artista__canciones for artista in catalogo.getArtistas()),
+            *(lista._ListaReproduccion__canciones for lista in catalogo.getListasRepro())
+        ))
 
         canciones_ordenadas = sorted(
             list(catalogo_completo), 
@@ -421,15 +421,12 @@ class Aleatorio(EstrategiaBusqueda):
         if not isinstance(sesion, Sesion):
             raise TypeError("sesion debe pertenecer a la clase Sesion")
 
-        catalogo_completo = set(catalogo.getCanciones())
+        canciones_lista = list(set(itertools.chain(
+            catalogo.getCanciones(),
+            *(artista._Artista__canciones for artista in catalogo.getArtistas()),
+            *(lista._ListaReproduccion__canciones for lista in catalogo.getListasRepro())
+        )))
         
-        for artista in catalogo.getArtistas():
-            catalogo_completo.update(artista._Artista__canciones)
-
-        for lista in catalogo.getListasRepro():
-            catalogo_completo.update(lista._ListaReproduccion__canciones)
-
-        canciones_lista = list(catalogo_completo)
         random.shuffle(canciones_lista) 
 
         estadisticas_sesion = sesion.obtenerCaracteristicas()
