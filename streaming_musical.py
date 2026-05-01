@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import date
 import random
 from math import sqrt
+import asyncio
 
 class DuplicatedError(Exception):
     pass
@@ -67,7 +68,7 @@ class Artista(ElementoCatalogo):
     def obtenerCaracteristicas(self) -> dict:
         solucion = {}
         for cancion in self.__canciones:            
-            titulo = cancion.__titulo 
+            titulo = cancion._Cancion__titulo 
             solucion[titulo] = cancion.obtenerCaracteristicas()
             
         return solucion
@@ -89,7 +90,7 @@ class ListaReproduccion:
     def obtenerCaracteristicas(self) -> dict:
         solucion = {}
         for cancion in self.__canciones:            
-            titulo = cancion.__titulo 
+            titulo = cancion._Cancion__titulo 
             solucion[titulo] = cancion.obtenerCaracteristicas()
             
         return solucion
@@ -329,10 +330,10 @@ class Alfabetico(EstrategiaBusqueda):
 
         catalogo_completo = set(catalogo.getCanciones())
         for artista in catalogo.getArtistas():
-            catalogo_completo.update(artista.__canciones)
+            catalogo_completo.update(artista._Artista.__canciones)
 
         for lista in catalogo.getListasRepro():
-            catalogo_completo.update(lista.__canciones)
+            catalogo_completo.update(lista._ListaReproduccion.__canciones)
 
         canciones_ordenadas = sorted(
             list(catalogo_completo), 
@@ -380,7 +381,7 @@ class Temporal(EstrategiaBusqueda):
 
         canciones_ordenadas = sorted(
             list(catalogo_completo), 
-            key=lambda c: c.__fecha_creacion,
+            key=lambda c: c._Cancion__fecha_creacion,
             reverse=True
         )
 
@@ -535,7 +536,7 @@ class SistemaRecomendacion:
         
         self.__manejador_inicial = m
 
-    def procesarCancion(self, id:str, fecha_hora:date, catalogo:ServicioStreaming):
+    async def procesarCancion(self, id:str, fecha_hora:date, catalogo:ServicioStreaming):
         if not isinstance(id, str):
             raise TypeError("id tiene que ser una cadena de texto")
         
