@@ -6,6 +6,9 @@ from math import sqrt
 class DuplicatedError(Exception):
     pass
 
+class SesionError(Exception):
+    pass
+
 class SingletonException(Exception):
     pass
 
@@ -524,6 +527,18 @@ class SistemaRecomendacion:
         
         self.__tipo_recomendacion = tipo
 
+    def setSesion(self, s:Sesion):
+        if not isinstance(s, Sesion):
+            raise TypeError("s debe ser un objeto de la clase Sesion")
+        
+        self.__sesion = s
+
+    def setManejador(self, m:Manejador):
+        if not isinstance(m, Manejador):
+            raise TypeError("m debe ser un objeto de la clase Manejador")
+        
+        self.__manejador_inicial = m
+
     def procesarCancion(self, id:str, fecha_hora:date, catalogo:ServicioStreaming):
         if not isinstance(id, str):
             raise TypeError("id tiene que ser una cadena de texto")
@@ -533,6 +548,9 @@ class SistemaRecomendacion:
         
         if not isinstance(catalogo, ServicioStreaming):
             raise TypeError("catalogo debe ser un objeto de la clase ServicioStreaming")
+        
+        if not self.__sesion:
+            raise SesionError("NO hay ninguna sesion iniciada")
         
         cancion_encontrada = None
         for cancion in catalogo.getCanciones():
@@ -546,6 +564,13 @@ class SistemaRecomendacion:
 
         if self.__manejador_inicial:
             self.__manejador_inicial.procesar(self.__sesion)
+
+    def recomendar(self, catalogo:ServicioStreaming):
+        if not isinstance(catalogo, ServicioStreaming):
+            raise TypeError("catalogo debe ser un objeto de la clase ServicioStreaming")
+        
+        if not self.__estrategia or not self.__sesion:
+            raise SesionError("Se deben inicializar los valores de estrategia y sesion")
         
         elemento_base = self.__estrategia.buscar(catalogo, self.__sesion)
         recomendacion = Recomendacion(elemento_base)
@@ -557,14 +582,3 @@ class SistemaRecomendacion:
             recomendacion = RecomListaRepro(recomendacion)
 
         return recomendacion.obtenerResultado()
-
-    def recomendar(self, catalogo:ServicioStreaming):
-        if not isinstance(catalogo, ServicioStreaming):
-            raise TypeError()
-        
-        if not self.__estrategia or not self.__sesion:
-            raise ValueError
-        
-        self.__manejador_inicial.procesar(self.__sesion)
-
-        elemento_base = self.__estrategia.buscar(catalogo, self.__sesion)
