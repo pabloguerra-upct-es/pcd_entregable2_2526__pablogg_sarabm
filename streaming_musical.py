@@ -478,8 +478,9 @@ class Recomendacion:
 class DecoradorRecom(Recomendacion):
     def __init__(self, recomendacion:Recomendacion):
         super().__init__(recomendacion._elemento)
+
         if not isinstance(recomendacion, Recomendacion):
-            raise TypeError("recomendacion debe ser una recomendacion")
+            raise TypeError("recomendacion debe ser un objeto de la clase Recomendacion")
         
         self.__recomendacion = recomendacion
 
@@ -492,8 +493,9 @@ class RecomArtista(DecoradorRecom):
         return resultado
 
 class RecomListaRepro(DecoradorRecom):
-    resultado = super().obtenerResultado()
-    pass
+    def obtenerResultado(self):
+        resultado = super().obtenerResultado()
+        return resultado
 
 class SistemaRecomendacion:
     __instancia = None
