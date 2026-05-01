@@ -483,14 +483,44 @@ class DecoradorRecom(Recomendacion):
         return self.__recomendacion.obtenerResultado()
 
 class RecomArtista(DecoradorRecom):
-    def obtenerResultado(self):
-        resultado = super().obtenerResultado()
-        return resultado
+    def __init__(self, recomendacion:Recomendacion, catalogo:ServicioStreaming):
+        if not isinstance(recomendacion, Recomendacion):
+            raise TypeError("recomendacion tiene que ser un objeto de la clase Recomendacion")
+        
+        if not isinstance(catalogo, ServicioStreaming):
+            raise TypeError("catalogo debe ser un objeto de la clase ServicioStreaming")
+        
+        super().__init__(recomendacion)
+        self.__catalogo = catalogo
+
+    def obtenerResultado(self, catalogo):
+        cancion = super().obtenerResultado()
+
+        for artista in catalogo.getArtistas():
+            if cancion in artista._Artista__canciones:
+                return artista
+        
+        return cancion
 
 class RecomListaRepro(DecoradorRecom):
-    def obtenerResultado(self):
-        resultado = super().obtenerResultado()
-        return resultado
+    def __init__(self, recomendacion:Recomendacion, catalogo:ServicioStreaming):
+        if not isinstance(recomendacion, Recomendacion):
+            raise TypeError("recomendacion tiene que ser un objeto de la clase Recomendacion")
+        
+        if not isinstance(catalogo, ServicioStreaming):
+            raise TypeError("catalogo debe ser un objeto de la clase ServicioStreaming")
+        
+        super().__init__(recomendacion)
+        self.__catalogo = catalogo
+
+    def obtenerResultado(self, catalogo):
+        cancion = super().obtenerResultado()
+
+        for lista in catalogo.getListasRepro():
+            if cancion in lista._ListaReproduccion__canciones:
+                return lista
+        
+        return cancion
 
 class SistemaRecomendacion:
     __instancia = None
