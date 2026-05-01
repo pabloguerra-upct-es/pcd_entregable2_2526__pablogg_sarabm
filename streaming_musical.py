@@ -39,7 +39,7 @@ class Cancion(ElementoCatalogo):
         self.__c_sonoras = c_sonoras
         self.__c_sentimentales = c_sentimentales
         self.__titulo = titulo
-        self.__fecha_creacion = fecha_creacion        
+        self.__fecha_creacion = fecha_creacion       
 
     def obtenerCaracteristicas(self) -> dict:
         solucion = {}
@@ -65,16 +65,19 @@ class Artista(ElementoCatalogo):
         self.__canciones = canciones
         self.__fecha_nacimiento = fecha_nacimiento
 
+    def obtenerCanciones(self):
+        return self.__canciones
+
     def obtenerCaracteristicas(self) -> dict:
         solucion = {}
         for cancion in self.__canciones:            
-            titulo = cancion._Cancion__titulo 
+            titulo = cancion.titulo 
             solucion[titulo] = cancion.obtenerCaracteristicas()
             
         return solucion
     
 class ListaReproduccion:
-    def __init__(self, canciones:list[Cancion], nombre:str):
+    def __init__(self, canciones:list[Cancion], nombre:str, fecha_creacion:date):
         if not isinstance(canciones, list):
             raise TypeError("canciones debe ser una lista")
 
@@ -84,13 +87,20 @@ class ListaReproduccion:
         if not isinstance(nombre, str):
             raise TypeError("nombre debe ser una cadena de texto")
         
+        if not isinstance(fecha_creacion, date):
+            raise TypeError("fecha_creacion debe ser una fecha")
+        
         self.__canciones = canciones
         self.__nombre = nombre
+        self.__fechs_creacion = fecha_creacion
+
+    def obtenerCanciones(self):
+        return self.__canciones
 
     def obtenerCaracteristicas(self) -> dict:
         solucion = {}
         for cancion in self.__canciones:            
-            titulo = cancion._Cancion__titulo 
+            titulo = cancion.titulo 
             solucion[titulo] = cancion.obtenerCaracteristicas()
             
         return solucion
@@ -330,13 +340,13 @@ class Alfabetico(EstrategiaBusqueda):
 
         catalogo_completo = set(itertools.chain(
             catalogo.getCanciones(),
-            *(artista._Artista__canciones for artista in catalogo.getArtistas()),
-            *(lista._ListaReproduccion__canciones for lista in catalogo.getListasRepro())
+            *(artista.obtenerCanciones() for artista in catalogo.getArtistas()),
+            *(lista.obtenerCanciones() for lista in catalogo.getListasRepro())
         ))
 
         canciones_ordenadas = sorted(
             list(catalogo_completo), 
-            key=lambda c: c._Cancion__titulo.lower()
+            key=lambda c: c.__titulo.lower()
         )
 
         estadisticas_sesion = sesion.obtenerCaracteristicas()
@@ -373,45 +383,52 @@ class Temporal(EstrategiaBusqueda):
         if not isinstance(sesion, Sesion):
             raise TypeError("sesion debe pertenecer a la clase Sesion")
 
-        catalogo_completo = set(itertools.chain(
-            catalogo.getCanciones(),
-            *(artista._Artista__canciones for artista in catalogo.getArtistas()),
-            *(lista._ListaReproduccion__canciones for lista in catalogo.getListasRepro())
-        ))
+        items_catalogo = []
+        items_catalogo.extend(catalogo.getCanciones())
+        items_catalogo.extend(catalogo.getArtistas())
+        items_catalogo.extend(catalogo.getListasRepro())
 
-        canciones_ordenadas = sorted(
-            list(catalogo_completo), 
-            key=lambda c: c._Cancion__fecha_creacion,
+        items_ordenados = sorted(
+            items_catalogo,
+            key=lambda x: (
+                x._Cancion__fecha_creacion if isinstance(x, Cancion) else
+                x._ListaReproduccion__fecha_creacion if isinstance(x, ListaReproduccion) else
+                x._Artista__fecha_nacimiento if isinstance(x, Artista) else date.min
+            ),
             reverse=True
         )
 
-        estadisticas_sesion = sesion.obtenerCaracteristicas()
+        estadisticas_sesion = sesion.obtenerCaracteristicas(ManejadorSonoro(ManejadorSentimental()))
 
-        def coincide(cancion):
-            caract_can = cancion.obtenerCaracteristicas()
-            sonoras = caract_can.get("Caracteristicas Sonoras", {})
-            sentimentales = caract_can.get("Caracteristicas Sentimentales", {})
+        def coincide(item):
+            if isinstance(item, Cancion):
+                canciones_a_validar = [item]
 
-            for valor in sonoras.values():
-                media = estadisticas_sesion.get("Media Sonora", 0)
-                desv = estadisticas_sesion.get("Desviacion Sonora", 0)
-                if abs(valor - media) > desv:
-                    return False
-            
-            for valor in sentimentales.values():
-                media = estadisticas_sesion.get("Media Sentimental", 0)
-                desv = estadisticas_sesion.get("Desviacion Sentimental", 0)
-                if abs(valor - media) > desv:
-                    return False
+            elif isinstance(item, Artista):
+                canciones_a_validar = item.__canciones
+            elif isinstance(item, ListaReproduccion):
+                canciones_a_validar = item.__canciones
+            else:
+                return False
+
+            for cancion in canciones_a_validar:
+                caract = cancion.obtenerCaracteristicas()
+                sonoras = caract.get("Caracteristicas Sonoras", {})
+                sentimentales = caract.get("Caracteristicas Sentimentales", {})
+
+                for valor in sonoras.values():
+                    if abs(valor - estadisticas_sesion.get("Media Sonora", 0)) > estadisticas_sesion.get("Desviacion Sonora", 0):
+                        return False
+                
+                for valor in sentimentales.values():
+                    if abs(valor - estadisticas_sesion.get("Media Sentimental", 0)) > estadisticas_sesion.get("Desviacion Sentimental", 0):
+                        return False
             
             return True
 
-        coincidentes = filter(coincide, canciones_ordenadas)
-
-        try:
-            return next(coincidentes)
-        except StopIteration:
-            return None
+        for item in items_ordenados:
+            if coincide(item):
+                return item
 
 class Aleatorio(EstrategiaBusqueda):
     def buscar(self, catalogo: ServicioStreaming, sesion: Sesion):
