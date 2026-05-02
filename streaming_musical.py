@@ -71,7 +71,7 @@ class Artista(ElementoCatalogo):
     def obtenerCaracteristicas(self) -> dict:
         solucion = {}
         for cancion in self.__canciones:            
-            titulo = cancion.titulo 
+            titulo = cancion._Cancion__titulo 
             solucion[titulo] = cancion.obtenerCaracteristicas()
             
         return solucion
@@ -100,7 +100,7 @@ class ListaReproduccion:
     def obtenerCaracteristicas(self) -> dict:
         solucion = {}
         for cancion in self.__canciones:            
-            titulo = cancion.titulo 
+            titulo = cancion._Cancion__titulo 
             solucion[titulo] = cancion.obtenerCaracteristicas()
             
         return solucion
@@ -321,7 +321,7 @@ class ServicioStreaming:
 
 class EstrategiaBusqueda(ABC):
     @abstractmethod
-    def buscar(catalogo:ServicioStreaming, sesion:Sesion):
+    def buscar(self, catalogo:ServicioStreaming, sesion:Sesion):
         if not isinstance(catalogo, ServicioStreaming):
             raise TypeError("catalogo debe ser un servicio de streaming")
         
@@ -491,10 +491,10 @@ class Recomendacion:
 
 class DecoradorRecom(Recomendacion):
     def __init__(self, recomendacion:Recomendacion):
-        super().__init__(recomendacion._elemento)
-
         if not isinstance(recomendacion, Recomendacion):
             raise TypeError("recomendacion debe ser un objeto de la clase Recomendacion")
+        
+        super().__init__(recomendacion._elemento)
         
         self.__recomendacion = recomendacion
 
