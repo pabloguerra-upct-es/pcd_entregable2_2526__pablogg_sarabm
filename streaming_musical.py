@@ -151,7 +151,7 @@ class Manejador(ABC):
         
         self._siguiente = siguiente
 
-    def setSiguiente(self, m: "Manejador") -> Manejador:
+    def setSiguiente(self, m: "Manejador") -> "Manejador":
         """Permite cambiar o establecer el siguiente manejador en la cadena."""
         if not isinstance(m, Manejador):
             raise TypeError("El nuevo manejador debe pertenecer a la clase Manejador")
@@ -346,26 +346,30 @@ class Alfabetico(EstrategiaBusqueda):
 
         canciones_ordenadas = sorted(
             list(catalogo_completo), 
-            key=lambda c: c.__titulo.lower()
+            key=lambda c: c._Cancion__titulo.lower()
         )
 
         estadisticas_sesion = sesion.obtenerCaracteristicas(ManejadorSonoro(ManejadorSentimental()))
+        canciones_escuchadas = sesion.obtenerCanciones()
 
         def coincide(cancion) -> bool:
+            if cancion in canciones_escuchadas:
+                return False
+            
             caract_can = cancion.obtenerCaracteristicas()
             sonoras = caract_can.get("Caracteristicas Sonoras", {})
             sentimentales = caract_can.get("Caracteristicas Sentimentales", {})
 
             for valor in sonoras.values():
                 media = estadisticas_sesion.get("Media Sonora", 0)
-                desv = estadisticas_sesion.get("Desviacion Sonora", 0)
+                desv = estadisticas_sesion.get("Desviacion Sonora", 0) + 0.1
                 
                 if abs(valor - media) > desv:
                     return False
                 
             for valor in sentimentales.values():
                 media = estadisticas_sesion.get("Media Sentimental", 0)
-                desv = estadisticas_sesion.get("Desviacion Sentimental", 0)
+                desv = estadisticas_sesion.get("Desviacion Sentimental", 0) + 0.1
                 
                 if abs(valor - media) > desv:
                     return False
@@ -391,9 +395,9 @@ class Temporal(EstrategiaBusqueda):
         items_ordenados = sorted(
             items_catalogo,
             key=lambda x: (
-                x.__fecha_creacion if isinstance(x, Cancion) else
-                x.__fecha_creacion if isinstance(x, ListaReproduccion) else
-                x.__fecha_nacimiento if isinstance(x, Artista) else date.min
+                x._Cancion__fecha_creacion if isinstance(x, Cancion) else
+                x._ListaReproduccion__fecha_creacion if isinstance(x, ListaReproduccion) else
+                x._Artista__fecha_nacimiento if isinstance(x, Artista) else date.min
             ),
             reverse=True
         )
@@ -404,10 +408,9 @@ class Temporal(EstrategiaBusqueda):
             if isinstance(item, Cancion):
                 canciones_a_validar = [item]
 
-            elif isinstance(item, Artista):
-                canciones_a_validar = item.__canciones
-            elif isinstance(item, ListaReproduccion):
-                canciones_a_validar = item.__canciones
+            elif isinstance(item, Artista) or isinstance(item, ListaReproduccion):
+                canciones_a_validar = item.obtenerCanciones()
+            
             else:
                 return False
 
@@ -442,8 +445,8 @@ class Aleatorio(EstrategiaBusqueda):
 
         canciones_lista = list(set(itertools.chain(
             catalogo.getCanciones(),
-            *(artista._Artista__canciones for artista in catalogo.getArtistas()),
-            *(lista._ListaReproduccion__canciones for lista in catalogo.getListasRepro())
+            *(artista.obtenerCanciones() for artista in catalogo.getArtistas()),
+            *(lista.obtenerCanciones() for lista in catalogo.getListasRepro())
         )))
         
         random.shuffle(canciones_lista) 
@@ -511,10 +514,13 @@ class RecomArtista(DecoradorRecom):
 
     def obtenerResultado(self):
         cancion = super().obtenerResultado()
+        if not cancion:
+            return None
 
         for artista in self.__catalogo.getArtistas():
-            if cancion in artista._Artista__canciones:
-                return artista
+            for c in artista.obtenerCanciones():
+                if c._Cancion__id == cancion._Cancion__id:
+                    return artista
         
         return cancion
 
@@ -533,7 +539,7 @@ class RecomListaRepro(DecoradorRecom):
         cancion = super().obtenerResultado()
 
         for lista in self.__catalogo.getListasRepro():
-            if cancion in lista._ListaReproduccion__canciones:
+            if cancion in lista.obtenerCanciones():
                 return lista
         
         return cancion
@@ -564,7 +570,7 @@ class SistemaRecomendacion:
         self.__estrategia = e
 
     def setTipoRecomendacion(self, tipo:ElementoCatalogo):
-        if not isinstance(tipo, ElementoCatalogo):
+        if not issubclass(tipo, ElementoCatalogo):
             raise TypeError("tipo debe ser un objeto de la clase ElementoCatalogo")
         
         self.__tipo_recomendacion = tipo
@@ -596,7 +602,7 @@ class SistemaRecomendacion:
         
         cancion_encontrada = None
         for cancion in catalogo.getCanciones():
-            if cancion.__id == id:
+            if cancion._Cancion__id == id:
                 cancion_encontrada = cancion
 
         if not cancion_encontrada:
