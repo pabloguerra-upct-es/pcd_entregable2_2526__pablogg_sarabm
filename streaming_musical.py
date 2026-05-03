@@ -805,3 +805,40 @@ class SistemaRecomendacion:
             recomendacion = RecomListaRepro(recomendacion, catalogo)
 
         return recomendacion.obtenerResultado()
+
+# --- CODIGO DE PRUEBA ---
+
+# 1. Creamos canciones con valores simples para facilitar el cálculo 
+# Cancion 1: Sonora {10}, Sentimental {2}
+c1 = Cancion("ID1", {"v": 10.0}, {"s": 2.0}, "Track 1", date.today())
+# Cancion 2: Sonora {20}, Sentimental {4}
+c2 = Cancion("ID2", {"v": 20.0}, {"s": 4.0}, "Track 2", date.today())
+
+# Esperamos:
+# Media Sonora: (10+20)/2 = 15.0
+# Media Sentimental: (2+4)/2 = 3.0
+# Desviación Sonora: sqrt(((10-15)^2 + (20-15)^2)/2) = sqrt(25) = 5.0
+
+# 2. Configuramos los manejadores
+manejador_principal = ManejadorSonoro()
+manejador_principal.setSiguiente(ManejadorSentimental())
+
+# 3. Creamos la sesión solo con la lista de canciones
+mi_sesion = Sesion([c1, c2])
+
+# --- EJECUCIÓN DEL TEST ---
+
+try:
+    resultados = mi_sesion.obtenerCaracteristicas(manejador_principal)
+    
+    print(f"Resultados obtenidos: {resultados}")
+    
+    # Verificaciones automáticas
+    assert resultados["Media Sonora"] == 15.0, f"Error en Media Sonora: {resultados['Media Sonora']}"
+    assert resultados["Media Sentimental"] == 3.0, f"Error en Media Sentimental: {resultados['Media Sentimental']}"
+    assert resultados["Desviacion Sonora"] == 5.0, f"Error en Desviación Sonora: {resultados['Desviacion Sonora']}"
+    
+    print("TEST SUPERADO.")
+
+except AssertionError as e:
+    print(f"TEST FALLIDO: {e}")
