@@ -566,36 +566,48 @@ class Aleatorio(EstrategiaBusqueda):
         if not isinstance(sesion, Sesion):
             raise TypeError("sesion debe pertenecer a la clase Sesion")
 
-        canciones_lista = list(set(itertools.chain(
-            catalogo.getCanciones(),
-            *(artista.obtenerCanciones() for artista in catalogo.getArtistas()),
-            *(lista.obtenerCanciones() for lista in catalogo.getListasRepro())
-        )))
+        items_catalogo = []
+        items_catalogo.extend(catalogo.getCanciones())
+        items_catalogo.extend(catalogo.getArtistas())
+        items_catalogo.extend(catalogo.getListasRepro())
         
-        random.shuffle(canciones_lista) 
+        random.shuffle(items_catalogo) 
 
         estadisticas_sesion = sesion.obtenerCaracteristicas(ManejadorSonoro(ManejadorSentimental()))
+        canciones_escuchadas = sesion.obtenerCanciones()
 
-        def coincide(cancion) -> bool:
-            caract_can = cancion.obtenerCaracteristicas()
-            sonoras = caract_can.get("Caracteristicas Sonoras", {})
-            sentimentales = caract_can.get("Caracteristicas Sentimentales", {})
-
-            for valor in sonoras.values():
-                media = estadisticas_sesion.get("Media Sonora", 0)
-                desv = estadisticas_sesion.get("Desviacion Sonora", 0)
-                if abs(valor - media) > desv:
-                    return False
+        def coincide(item) -> bool:
+            '''Funcion que valida si el objeto (o todas las canciones que contiene) coincide con la sesión'''
             
-            for valor in sentimentales.values():
-                media = estadisticas_sesion.get("Media Sentimental", 0)
-                desv = estadisticas_sesion.get("Desviacion Sentimental", 0)
-                if abs(valor - media) > desv:
+            if isinstance(item, Cancion):
+                if item in canciones_escuchadas:
                     return False
+                canciones_a_validar = [item]
+            elif isinstance(item, (Artista, ListaReproduccion)):
+                canciones_a_validar = item.obtenerCanciones()
+            else:
+                return False
+
+            for cancion in canciones_a_validar:
+                caract = cancion.obtenerCaracteristicas()
+                sonoras = caract.get("Caracteristicas Sonoras", {})
+                sentimentales = caract.get("Caracteristicas Sentimentales", {})
+
+                for valor in sonoras.values():
+                    media = estadisticas_sesion.get("Media Sonora", 0)
+                    desv = estadisticas_sesion.get("Desviacion Sonora", 0)
+                    if abs(valor - media) > desv:
+                        return False
+                
+                for valor in sentimentales.values():
+                    media = estadisticas_sesion.get("Media Sentimental", 0)
+                    desv = estadisticas_sesion.get("Desviacion Sentimental", 0)
+                    if abs(valor - media) > desv:
+                        return False
             
             return True
 
-        coincidentes = filter(coincide, canciones_lista)
+        coincidentes = filter(coincide, items_catalogo)
 
         try:
             return next(coincidentes)
